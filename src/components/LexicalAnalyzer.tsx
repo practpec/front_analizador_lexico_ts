@@ -3,15 +3,20 @@ import { CodeEditor } from './CodeEditor';
 import { TokenDisplay } from './TokenDisplay';
 import { ErrorDisplay } from './ErrorDisplay';
 import { LoadingSpinner } from './LoadingSpinner';
+import { FileUpload } from './FileUpload';
 import { AnalyzerService } from '../services/AnalyzerService';
+import { FileDecoder } from '../utils/FileDecoder';
 import type { Token, AnalysisError } from '../types/token';
 
+// LexicalAnalyzer es el componente principal que coordina toda la funcionalidad
 export const LexicalAnalyzer: React.FC = () => {
   const [code, setCode] = useState<string>('');
   const [tokens, setTokens] = useState<Token[]>([]);
   const [errors, setErrors] = useState<AnalysisError[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [currentFileName, setCurrentFileName] = useState<string>('');
 
+  // handleAnalyze ejecuta el análisis del código ingresado
   const handleAnalyze = async () => {
     if (!code.trim()) {
       alert('Por favor, ingresa código para analizar');
@@ -31,13 +36,70 @@ export const LexicalAnalyzer: React.FC = () => {
     }
   };
 
+  // handleClear limpia el editor y los resultados
   const handleClear = () => {
     setCode('');
     setTokens([]);
     setErrors([]);
+    setCurrentFileName('');
   };
 
- 
+  // handleFileLoad procesa el archivo cargado
+  const handleFileLoad = (content: string, fileName: string) => {
+    // Limpiar el contenido
+    const cleanedContent = FileDecoder.cleanContent(content);
+    
+    // Validar el contenido
+    const extension = fileName.toLowerCase().slice(fileName.lastIndexOf('.'));
+    const validation = FileDecoder.validateContent(cleanedContent, extension);
+    
+    if (!validation.valid && validation.warnings.length > 0) {
+      const proceedWithWarnings = window.confirm(
+        `Se encontraron las siguientes advertencias:\n\n${validation.warnings.join('\n')}\n\n¿Deseas continuar cargando el archivo?`
+      );
+      
+      if (!proceedWithWarnings) {
+        return;
+      }
+    }
+    
+    // Actualizar estado
+    setCode(cleanedContent);
+    setCurrentFileName(fileName);
+    
+    // Limpiar resultados anteriores
+    setTokens([]);
+    setErrors([]);
+    
+    // Mostrar información de carga exitosa
+    const warningsText = validation.warnings.length > 0 
+      ? ` (${validation.warnings.length} advertencia${validation.warnings.length > 1 ? 's' : ''})`
+      : '';
+    
+    alert(`Archivo "${fileName}" cargado exitosamente${warningsText}`);
+  };
+
+  // loadExample carga un ejemplo de código TypeScript
+  const loadExample = () => {
+    const exampleCode = `for (let i = 0; i < 10; i++) {
+  if (i % 2 === 0) {
+    console.log("Número par:", i);
+  } else {
+    console.log("Número impar:", i);
+  }
+}
+
+function calculateSum(a: number, b: number): number {
+  return a + b;
+}
+
+const result = calculateSum(5, 3);`;
+    
+    setCode(exampleCode);
+    setCurrentFileName('');
+    setTokens([]);
+    setErrors([]);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
@@ -50,10 +112,15 @@ export const LexicalAnalyzer: React.FC = () => {
           <p className="text-lg text-gray-300">
             Análisis automático de tokens en código TypeScript
           </p>
+          {currentFileName && (
+            <p className="text-sm text-blue-400 mt-2">
+              Archivo cargado: {currentFileName}
+            </p>
+          )}
         </header>
 
         {/* Action Buttons */}
-        <div className="flex justify-center gap-4 mb-8">
+        <div className="flex justify-center gap-4 mb-8 flex-wrap">
           <button
             onClick={handleAnalyze}
             disabled={isLoading || !code.trim()}
@@ -65,6 +132,21 @@ export const LexicalAnalyzer: React.FC = () => {
             {isLoading ? 'Analizando...' : 'Analizar Código'}
           </button>
           
+          <FileUpload 
+            onFileLoad={handleFileLoad}
+            disabled={isLoading}
+          />
+          
+          <button
+            onClick={loadExample}
+            disabled={isLoading}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-medium
+                     hover:from-purple-500 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500
+                     disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed
+                     transition-all duration-200 shadow-lg"
+          >
+            Cargar Ejemplo
+          </button>
           
           <button
             onClick={handleClear}
@@ -86,7 +168,7 @@ export const LexicalAnalyzer: React.FC = () => {
             <CodeEditor
               code={code}
               onChange={setCode}
-              placeholder="Escribe tu código TypeScript aquí..."
+              placeholder="Escribe tu código TypeScript aquí o sube un archivo..."
             />
           </div>
 
@@ -102,7 +184,7 @@ export const LexicalAnalyzer: React.FC = () => {
             </div>
           </div>
 
-          {/* Columna 3: Tokens/Caracteres */}
+          {/* Columna 3: Tokens */}
           <div className="bg-gray-800 rounded-xl shadow-2xl p-6 border border-gray-700">
             <h2 className="text-xl font-semibold text-green-400 mb-4">Tokens Identificados</h2>
             <div className="min-h-96">
@@ -115,11 +197,34 @@ export const LexicalAnalyzer: React.FC = () => {
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="text-center mt-12 text-gray-400 text-sm">
-          <p>Analizador Léxico • Backend: Go • Frontend: React + Tailwind CSS</p>
-        </footer>
+        {/* Resumen de Resultados */}
+        {(tokens.length > 0 || errors.length > 0) && (
+          <div className="mt-8 max-w-4xl mx-auto">
+            <div className="bg-gray-800 rounded-xl shadow-2xl p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold text-indigo-400 mb-4 text-center">Resumen del Análisis</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <p className="text-3xl font-bold text-green-400">{tokens.length}</p>
+                  <p className="text-gray-300 text-sm">Tokens Identificados</p>
+                </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <p className="text-3xl font-bold text-red-400">{errors.length}</p>
+                  <p className="text-gray-300 text-sm">Errores Encontrados</p>
+                </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <p className="text-3xl font-bold text-blue-400">
+                    {tokens.length + errors.length > 0 
+                      ? Math.round((tokens.length / (tokens.length + errors.length)) * 100)
+                      : 0}%
+                  </p>
+                  <p className="text-gray-300 text-sm">Tokens Válidos</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+   
