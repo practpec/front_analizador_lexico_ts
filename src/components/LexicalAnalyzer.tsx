@@ -79,27 +79,7 @@ export const LexicalAnalyzer: React.FC = () => {
     alert(`Archivo "${fileName}" cargado exitosamente${warningsText}`);
   };
 
-  // loadExample carga un ejemplo de código TypeScript
-  const loadExample = () => {
-    const exampleCode = `for (let i = 0; i < 10; i++) {
-  if (i % 2 === 0) {
-    console.log("Número par:", i);
-  } else {
-    console.log("Número impar:", i);
-  }
-}
 
-function calculateSum(a: number, b: number): number {
-  return a + b;
-}
-
-const result = calculateSum(5, 3);`;
-    
-    setCode(exampleCode);
-    setCurrentFileName('');
-    setTokens([]);
-    setErrors([]);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
@@ -137,16 +117,6 @@ const result = calculateSum(5, 3);`;
             disabled={isLoading}
           />
           
-          <button
-            onClick={loadExample}
-            disabled={isLoading}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-medium
-                     hover:from-purple-500 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500
-                     disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed
-                     transition-all duration-200 shadow-lg"
-          >
-            Cargar Ejemplo
-          </button>
           
           <button
             onClick={handleClear}
