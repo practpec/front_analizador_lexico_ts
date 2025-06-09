@@ -9,6 +9,7 @@ export const getTokenColor = (tokenType: TokenType): string => {
     OPERATOR: 'text-orange-300 bg-orange-900 bg-opacity-50',
     DELIMITER: 'text-gray-300 bg-gray-700 bg-opacity-50',
     STRING: 'text-yellow-300 bg-yellow-900 bg-opacity-50',
+    COMMENT: 'text-gray-400 bg-gray-800 bg-opacity-50',
     SYNTAX_ERROR: 'text-red-300 bg-red-900 bg-opacity-50',
     EOF: 'text-gray-400 bg-gray-800',
   };
@@ -25,6 +26,7 @@ export const getTokenLabel = (tokenType: TokenType): string => {
     OPERATOR: 'Operador',
     DELIMITER: 'Delimitador',
     STRING: 'String',
+    COMMENT: 'Comentario',
     SYNTAX_ERROR: 'Error de Sintaxis',
     EOF: 'Fin de Archivo',
   };

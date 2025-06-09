@@ -6,6 +6,7 @@ export type TokenType =
   | 'OPERATOR'
   | 'DELIMITER'
   | 'STRING'
+  | 'COMMENT'
   | 'SYNTAX_ERROR'
   | 'EOF';
 
